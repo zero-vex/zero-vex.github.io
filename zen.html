@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Zen</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --gold:#c8a84b;--gold2:#e8c87a;--dim:#a09878;
+  --panel:#0c0620;--panelborder:#c8a84b;
+  --stone:#5a4e70;--text:#e8dfc8;
+}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'VT323',monospace;background:#060212;color:var(--text);image-rendering:pixelated;}
+
+/* ── SKY ── */
+#sky{position:fixed;inset:0;z-index:0;background:linear-gradient(180deg,#050110 0%,#100825 35%,#1a0f3c 65%,#0b1528 100%);}
+
+/* ── STARS ── */
+#stars{position:fixed;inset:0;z-index:1;pointer-events:none;}
+.star{position:absolute;background:#fff;}
+.tw{animation:tw 2s ease-in-out infinite;}
+@keyframes tw{0%,100%{opacity:.1;}50%{opacity:1;}}
+
+/* ── MOON ── */
+.moon{position:fixed;top:6vh;left:9vw;width:52px;height:52px;background:#f5e8b0;z-index:2;box-shadow:4px 4px 0 #d4c060,-2px -2px 0 #c8b040;animation:mf 7s ease-in-out infinite;}
+.moon::before{content:'';position:absolute;top:10px;left:10px;width:6px;height:6px;background:#c8b040;}
+.moon::after{content:'';position:absolute;top:22px;left:26px;width:10px;height:6px;background:#c8b040;}
+@keyframes mf{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+
+/* ── FIREFLIES ── */
+.ff{position:fixed;width:4px;height:4px;background:#c8ff80;z-index:3;pointer-events:none;animation:ffa linear infinite;}
+@keyframes ffa{0%{opacity:0;transform:translate(0,0);}15%{opacity:1;}50%{opacity:.7;transform:translate(var(--dx),var(--dy));}85%{opacity:.3;}100%{opacity:0;transform:translate(var(--dx2),var(--dy2));}}
+
+/* ── MOUNTAINS ── */
+#mts{position:fixed;bottom:0;left:0;right:0;width:100%;height:52vh;z-index:2;pointer-events:none;}
+
+/* ── HERO ── */
+#hero{position:relative;z-index:10;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;text-align:center;padding:1.5rem;}
+
+.greeting-box{
+  background:rgba(4,1,14,.9);border:3px solid var(--gold);
+  box-shadow:4px 4px 0 #000;padding:1.25rem 2rem;
+  max-width:520px;width:100%;
+  animation:fi .9s ease forwards;opacity:0;
+}
+@keyframes fi{to{opacity:1;}}
+#timeDisplay{font-family:'Press Start 2P',monospace;font-size:clamp(.55rem,1.6vw,.85rem);color:var(--gold2);letter-spacing:.1em;margin-bottom:.5rem;text-shadow:2px 2px 0 #000;}
+#greeting{font-size:clamp(1rem,3.5vw,1.6rem);color:#c8ff80;text-shadow:2px 2px 0 #000;margin-bottom:.2rem;}
+#greetLine{font-size:clamp(.8rem,2.2vw,.95rem);color:var(--dim);}
+
+.site-title{font-family:'Press Start 2P',monospace;font-size:clamp(.8rem,3vw,1.7rem);color:var(--gold);text-shadow:3px 3px 0 #000,6px 6px 0 rgba(0,0,0,.4);animation:fi 1s .3s ease forwards;opacity:0;line-height:1.8;}
+
+.hint-row{animation:fi 1s 1s ease forwards;opacity:0;display:flex;gap:8px;align-items:center;}
+.hint-txt{font-size:.85rem;color:var(--dim);letter-spacing:.12em;}
+.dots{display:flex;gap:5px;}
+.dot{width:9px;height:9px;background:rgba(200,168,75,.15);border:2px solid rgba(200,168,75,.25);}
+.dot.on{background:var(--gold);border-color:var(--gold2);box-shadow:0 0 6px var(--gold);}
+.dot.err{background:#ff4040;border-color:#ff7070;}
+
+/* ── AUDIO PLAYER ── */
+#player{
+  position:fixed;bottom:1.2rem;right:1.5rem;
+  z-index:50;display:flex;align-items:center;gap:.6rem;
+  background:rgba(4,1,14,.85);border:2px solid rgba(200,168,75,.35);
+  padding:.4rem .8rem;font-size:.75rem;color:var(--dim);
+}
+#player button{background:none;border:none;color:var(--gold);cursor:pointer;font-family:'VT323',monospace;font-size:1rem;}
+#player button:hover{color:var(--gold2);}
+#vol{width:60px;accent-color:var(--gold);}
+.note{animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:.4;}50%{opacity:1;}}
+
+/* ── OVERLAY ── */
+.ov{position:fixed;inset:0;z-index:100;background:rgba(3,1,10,.97);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.25rem;opacity:0;pointer-events:none;transition:opacity .35s ease;overflow-y:auto;}
+.ov.open{opacity:1;pointer-events:all;}
+
+/* ── PANEL ── */
+.panel{background:var(--panel);border:3px solid var(--panelborder);box-shadow:6px 6px 0 #000;padding:1.5rem 1.75rem;width:100%;max-width:700px;max-height:88vh;overflow-y:auto;}
+.panel::-webkit-scrollbar{width:5px;}.panel::-webkit-scrollbar-track{background:#060212;}.panel::-webkit-scrollbar-thumb{background:var(--stone);}
+.panel-title{font-family:'Press Start 2P',monospace;font-size:clamp(.5rem,1.7vw,.82rem);color:var(--gold);text-shadow:2px 2px 0 #000;margin-bottom:.9rem;text-align:center;line-height:2;}
+.panel-sub{font-size:.9rem;color:var(--dim);text-align:center;margin-bottom:1.25rem;letter-spacing:.1em;}
+
+/* ── CAT GRID ── */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:.6rem;}
+.cat-btn{background:#130a22;border:2px solid var(--stone);color:var(--text);font-family:'VT323',monospace;font-size:1rem;padding:.55rem .4rem;cursor:pointer;text-align:center;box-shadow:3px 3px 0 #000;transition:all .12s;line-height:1.3;position:relative;}
+.cat-btn:hover{background:#221540;border-color:var(--gold);color:var(--gold2);transform:translate(-1px,-1px);box-shadow:4px 4px 0 #000;}
+.cat-btn.ai-btn{border-color:#5a9fff;color:#9fd0ff;}
+.cat-btn.ai-btn:hover{background:#0a1a35;border-color:#9fd0ff;color:#d0e8ff;}
+.ci{font-size:1.25rem;display:block;margin-bottom:.2rem;}
+.cn{font-size:.65rem;color:var(--dim);margin-top:.12rem;}
+
+/* ── LINK LIST ── */
+.link-list{display:flex;flex-direction:column;gap:.42rem;margin-bottom:.8rem;}
+.li{display:flex;align-items:center;gap:.65rem;background:#110920;border:2px solid var(--stone);padding:.52rem .75rem;text-decoration:none;color:var(--text);font-size:.98rem;box-shadow:3px 3px 0 #000;transition:all .12s;}
+.li:hover{background:#1e0f3a;border-color:var(--gold);color:var(--gold2);transform:translateX(3px);}
+.li.empty{opacity:.3;cursor:default;border-style:dashed;}
+.lnum{font-family:'Press Start 2P',monospace;font-size:.44rem;color:var(--dim);min-width:20px;text-align:right;}
+.lname{flex:1;}
+.lbadge{font-size:.68rem;padding:1px 5px;border:1px solid;}
+.ok{color:#80ff80;border-color:#80ff80;}.bl{color:#ff6060;border-color:#ff6060;}.ext{color:#80c8ff;border-color:#80c8ff;}
+
+.back-btn{font-family:'VT323',monospace;font-size:1rem;background:transparent;border:2px solid var(--stone);color:var(--dim);padding:.32rem .85rem;cursor:pointer;box-shadow:2px 2px 0 #000;transition:all .12s;display:block;margin:0 auto;}
+.back-btn:hover{border-color:var(--gold);color:var(--gold);}
+.close-x{font-family:'Press Start 2P',monospace;font-size:.42rem;background:transparent;border:2px solid #3a1818;color:#ff6060;padding:.28rem .6rem;cursor:pointer;box-shadow:2px 2px 0 #000;transition:all .12s;display:block;margin:.55rem auto 0;}
+.close-x:hover{border-color:#ff4040;background:#160404;}
+
+/* ── AI PANEL ── */
+#aiPanel .panel{max-width:760px;}
+.ai-chat{display:flex;flex-direction:column;gap:.6rem;max-height:52vh;overflow-y:auto;margin-bottom:.8rem;padding:.5rem 0;}
+.ai-chat::-webkit-scrollbar{width:4px;}.ai-chat::-webkit-scrollbar-thumb{background:var(--stone);}
+.msg{padding:.55rem .8rem;font-size:1rem;line-height:1.5;max-width:88%;}
+.msg.user{background:#1a0f35;border:1px solid #5a4e70;align-self:flex-end;}
+.msg.ai{background:#080520;border:1px solid #2a5a8a;color:#c8e8ff;align-self:flex-start;}
+.msg.ai .ai-name{font-family:'Press Start 2P',monospace;font-size:.42rem;color:#5a9fff;margin-bottom:.3rem;}
+.ai-thinking{color:var(--dim);font-size:.85rem;animation:pulse 1.2s ease-in-out infinite;align-self:flex-start;padding:.4rem .6rem;}
+.ai-input-row{display:flex;gap:.5rem;}
+#aiInput{flex:1;background:#0a0618;border:2px solid var(--stone);color:var(--text);font-family:'VT323',monospace;font-size:1rem;padding:.45rem .7rem;outline:none;}
+#aiInput:focus{border-color:var(--gold);}
+#aiInput::placeholder{color:var(--dim);}
+#aiSend{font-family:'Press Start 2P',monospace;font-size:.42rem;background:#0a1a35;border:2px solid #5a9fff;color:#9fd0ff;padding:.45rem .8rem;cursor:pointer;transition:all .12s;}
+#aiSend:hover{background:#142a55;border-color:#9fd0ff;}
+#aiSend:disabled{opacity:.4;cursor:not-allowed;}
+.ai-notice{font-size:.72rem;color:var(--dim);text-align:center;margin-top:.5rem;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div id="sky"></div>
+<div id="stars"></div>
+<div class="moon"></div>
+
+<!-- LOFI AUDIO (YouTube embed hidden) -->
+<audio id="lofi" loop preload="none">
+  <!-- Stream de lofi via rádio pública -->
+</audio>
+
+<!-- PLAYER UI -->
+<div id="player">
+  <span class="note">♪</span>
+  <span id="playerLabel">lofi zen</span>
+  <button id="playBtn" onclick="togglePlay()">▶</button>
+  <input type="range" id="vol" min="0" max="1" step="0.05" value="0.12" oninput="setVol(this.value)">
+  <span id="volNum">12%</span>
+</div>
+
+<!-- SVG MONTANHAS PIXEL ART -->
+<svg id="mts" viewBox="0 0 800 300" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="0,300 70,140 140,300" fill="#100920"/>
+  <polygon points="50,300 155,85 260,300" fill="#180e30"/>
+  <polygon points="170,300 285,110 400,300" fill="#100920"/>
+  <polygon points="290,300 425,65 555,300" fill="#180e30"/>
+  <polygon points="455,300 565,95 675,300" fill="#100920"/>
+  <polygon points="575,300 685,118 795,300" fill="#180e30"/>
+  <polygon points="685,300 795,80 905,300" fill="#100920"/>
+  <!-- neve -->
+  <polygon points="150,85 155,70 160,85" fill="#aea0cc"/>
+  <polygon points="420,65 425,50 430,65" fill="#aea0cc"/>
+  <polygon points="560,95 565,80 570,95" fill="#aea0cc"/>
+  <polygon points="790,80 795,64 800,80" fill="#aea0cc"/>
+  <!-- médias -->
+  <polygon points="0,300 55,188 118,300" fill="#1e1440"/>
+  <polygon points="88,300 186,152 284,300" fill="#281c52"/>
+  <polygon points="240,300 342,138 444,300" fill="#1e1440"/>
+  <polygon points="382,300 484,158 586,300" fill="#281c52"/>
+  <polygon points="524,300 626,143 728,300" fill="#1e1440"/>
+  <polygon points="654,300 754,163 854,300" fill="#281c52"/>
+  <!-- neve médias -->
+  <polygon points="183,152 188,140 193,152" fill="#baaed8"/>
+  <polygon points="481,158 486,145 491,158" fill="#baaed8"/>
+  <polygon points="623,143 628,130 633,143" fill="#baaed8"/>
+  <!-- chão -->
+  <rect x="0" y="273" width="800" height="27" fill="#160e2c"/>
+  <rect x="0" y="269" width="800" height="6" fill="#2a4218"/>
+  <!-- grama pixel -->
+  <rect x="0" y="263" width="4" height="6" fill="#4a8a2a"/><rect x="8" y="265" width="4" height="4" fill="#6abf3a"/>
+  <rect x="16" y="261" width="6" height="8" fill="#4a8a2a"/><rect x="28" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="36" y="260" width="4" height="9" fill="#4a8a2a"/><rect x="48" y="263" width="6" height="6" fill="#6abf3a"/>
+  <rect x="62" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="74" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="88" y="261" width="6" height="8" fill="#4a8a2a"/><rect x="102" y="263" width="4" height="6" fill="#6abf3a"/>
+  <rect x="116" y="260" width="4" height="9" fill="#4a8a2a"/><rect x="130" y="264" width="6" height="5" fill="#6abf3a"/>
+  <rect x="144" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="158" y="263" width="4" height="6" fill="#6abf3a"/>
+  <rect x="172" y="261" width="6" height="8" fill="#4a8a2a"/><rect x="186" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="200" y="260" width="4" height="9" fill="#4a8a2a"/><rect x="216" y="263" width="6" height="6" fill="#6abf3a"/>
+  <rect x="230" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="244" y="265" width="4" height="4" fill="#6abf3a"/>
+  <rect x="258" y="261" width="6" height="8" fill="#4a8a2a"/><rect x="272" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="288" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="302" y="263" width="4" height="6" fill="#6abf3a"/>
+  <rect x="316" y="260" width="6" height="9" fill="#4a8a2a"/><rect x="332" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="346" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="360" y="263" width="6" height="6" fill="#6abf3a"/>
+  <rect x="374" y="261" width="4" height="8" fill="#4a8a2a"/><rect x="388" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="404" y="262" width="6" height="7" fill="#4a8a2a"/><rect x="418" y="265" width="4" height="4" fill="#6abf3a"/>
+  <rect x="432" y="261" width="4" height="8" fill="#4a8a2a"/><rect x="446" y="263" width="6" height="6" fill="#6abf3a"/>
+  <rect x="462" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="476" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="490" y="260" width="6" height="9" fill="#4a8a2a"/><rect x="506" y="263" width="4" height="6" fill="#6abf3a"/>
+  <rect x="520" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="534" y="265" width="4" height="4" fill="#6abf3a"/>
+  <rect x="548" y="261" width="6" height="8" fill="#4a8a2a"/><rect x="562" y="263" width="4" height="6" fill="#6abf3a"/>
+  <rect x="578" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="592" y="264" width="4" height="5" fill="#6abf3a"/>
+  <rect x="606" y="260" width="6" height="9" fill="#4a8a2a"/><rect x="622" y="263" width="4" height="6" fill="#6abf3a"/>
+  <rect x="636" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="650" y="265" width="4" height="4" fill="#6abf3a"/>
+  <rect x="664" y="261" width="6" height="8" fill="#4a8a2a"/><rect x="678" y="263" width="4" height="5" fill="#6abf3a"/>
+  <rect x="694" y="260" width="4" height="9" fill="#4a8a2a"/><rect x="708" y="264" width="6" height="5" fill="#6abf3a"/>
+  <rect x="722" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="736" y="263" width="4" height="6" fill="#6abf3a"/>
+  <rect x="752" y="261" width="6" height="8" fill="#4a8a2a"/><rect x="766" y="265" width="4" height="4" fill="#6abf3a"/>
+  <rect x="780" y="262" width="4" height="7" fill="#4a8a2a"/><rect x="794" y="264" width="6" height="5" fill="#6abf3a"/>
+  <!-- árvores -->
+  <rect x="28" y="234" width="8" height="35" fill="#3e2610"/>
+  <rect x="16" y="210" width="32" height="28" fill="#265018"/><rect x="20" y="198" width="24" height="16" fill="#326820"/>
+  <rect x="24" y="188" width="16" height="14" fill="#4a8a2a"/>
+  <rect x="120" y="237" width="8" height="32" fill="#3e2610"/>
+  <rect x="108" y="213" width="32" height="28" fill="#265018"/><rect x="112" y="201" width="24" height="16" fill="#326820"/>
+  <rect x="116" y="191" width="16" height="14" fill="#4a8a2a"/>
+  <rect x="664" y="234" width="8" height="35" fill="#3e2610"/>
+  <rect x="652" y="210" width="32" height="28" fill="#265018"/><rect x="656" y="198" width="24" height="16" fill="#326820"/>
+  <rect x="660" y="188" width="16" height="14" fill="#4a8a2a"/>
+  <rect x="748" y="237" width="8" height="32" fill="#3e2610"/>
+  <rect x="736" y="213" width="32" height="28" fill="#265018"/><rect x="740" y="201" width="24" height="16" fill="#326820"/>
+  <rect x="744" y="191" width="16" height="14" fill="#4a8a2a"/>
+  <!-- cogumelos -->
+  <rect x="198" y="260" width="6" height="10" fill="#b89060"/>
+  <rect x="192" y="251" width="18" height="10" fill="#bb2222"/>
+  <rect x="194" y="249" width="14" height="4" fill="#bb2222"/>
+  <rect x="196" y="253" width="4" height="4" fill="#ffd8d8"/>
+  <rect x="204" y="255" width="4" height="4" fill="#ffd8d8"/>
+  <rect x="556" y="260" width="6" height="10" fill="#b89060"/>
+  <rect x="550" y="251" width="18" height="10" fill="#7722bb"/>
+  <rect x="552" y="249" width="14" height="4" fill="#7722bb"/>
+  <rect x="554" y="253" width="4" height="4" fill="#e8d0ff"/>
+  <rect x="562" y="255" width="4" height="4" fill="#e8d0ff"/>
+</svg>
+
+<!-- HERO -->
+<div id="hero">
+  <div class="greeting-box">
+    <div id="timeDisplay">--:--:--</div>
+    <div id="greeting">Carregando...</div>
+    <div id="greetLine">bem-vindo ao portal</div>
+  </div>
+  <div class="site-title">⛰ PORTAL ZEN ⛰</div>
+  <div class="hint-row">
+    <span class="hint-txt">SENHA:</span>
+    <div class="dots" id="dotsEl"></div>
+  </div>
+</div>
+
+<!-- MENU 1: Categorias -->
+<div class="ov" id="menu1">
+  <div class="panel">
+    <div class="panel-title">▶ MENU SECRETO ◀</div>
+    <div class="panel-sub">escolha uma categoria</div>
+    <div class="cat-grid" id="catGrid"></div>
+    <button class="close-x" onclick="closeAll()">✕ FECHAR [ESC]</button>
+  </div>
+</div>
+
+<!-- MENU 2: Links -->
+<div class="ov" id="menu2">
+  <div class="panel">
+    <div class="panel-title" id="m2title">—</div>
+    <div class="panel-sub" id="m2sub"></div>
+    <div class="link-list" id="linkList"></div>
+    <button class="back-btn" onclick="goBack()">◀ VOLTAR</button>
+    <button class="close-x" onclick="closeAll()">✕ FECHAR [ESC]</button>
+  </div>
+</div>
+
+<!-- MENU IA -->
+<div class="ov" id="aiPanel">
+  <div class="panel">
+    <div class="panel-title">🤖 ASSISTENTE IA ◀</div>
+    <div class="panel-sub">powered by claude · conversas não são salvas</div>
+    <div class="ai-chat" id="aiChat"></div>
+    <div class="ai-input-row">
+      <input type="text" id="aiInput" placeholder="Digite sua mensagem..." maxlength="800" onkeydown="if(event.key==='Enter')sendAI()">
+      <button id="aiSend" onclick="sendAI()">ENVIAR ▶</button>
+    </div>
+    <div class="ai-notice">
+      ⚠ Para usar a IA, insira sua chave de API da Anthropic no código (variável API_KEY).<br>
+      Obtenha em: <a href="https://console.anthropic.com/" target="_blank" style="color:#5a9fff;">console.anthropic.com</a>
+    </div>
+    <button class="back-btn" onclick="goBack()" style="margin-top:.8rem;">◀ VOLTAR</button>
+    <button class="close-x" onclick="closeAll()">✕ FECHAR [ESC]</button>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════
+   ⚙ CONFIGURAÇÕES — edite aqui
+═══════════════════════════════ */
+const SENHA = "terraria"; // ← sua senha secreta
+
+// Cole aqui sua chave da API Anthropic (console.anthropic.com → API Keys)
+const API_KEY = "SUA_CHAVE_AQUI";
+
+// Categorias do menu secreto
+const CATS = [
+  // ── IA (menu especial) ──
+  {id:"ia",nome:"IA",icon:"🤖",ai:true,desc:"Assistente inteligente"},
+
+  // ── GERAL (links reais da planilha) ──
+  {id:"geral",nome:"GERAL",icon:"🌐",desc:"Sites funcionais gerais",links:[
+    {nome:"The Emulation Station",url:"https://emulationstation.org/",badge:"ext"},
+    {nome:"Simulador de Android",url:"https://appetize.io/demo",badge:"ext"},
+    {nome:"Jogos e Filmes",url:"https://example.com",badge:"ok"},
+    {nome:"Star Wars",url:"https://www.starwars.com",badge:"ext"},
+    {nome:"Jogos para Download",url:"https://example.com",badge:"ok"},
+    {nome:"Filmes e Séries",url:"https://example.com",badge:"ok"},
+    {nome:"Legendas (OpenSubtitles)",url:"https://www.opensubtitles.org/pt",badge:"ext"},
+    {nome:"SWF Emulador (Ruffle)",url:"https://ruffle.rs/demo",badge:"ext"},
+    {nome:"MSN Jogos",url:"https://zone.msn.com",badge:"ext"},
+    {nome:"SportSurge",url:"https://sportsurge.ws/",badge:"ext"},
+  ]},
+
+  // ── FERN (slots vazios para você preencher) ──
+  {id:"fern",nome:"FERN",icon:"🌿",desc:"Preencha os links no código",links:[
+    {nome:"FERN 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 3 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 4 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 5 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 6 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 7 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 8 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 9 — preencher URL",url:"",badge:"ok"},
+    {nome:"FERN 10 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── ROSIN ──
+  {id:"rosin",nome:"ROSIN",icon:"🔴",desc:"Aba ROSIN — preencha os links",links:[
+    {nome:"ROSIN 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"ROSIN 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"ROSIN 3 — preencher URL",url:"",badge:"ok"},
+    {nome:"ROSIN 4 — preencher URL",url:"",badge:"ok"},
+    {nome:"ROSIN 5 — preencher URL",url:"",badge:"ok"},
+    {nome:"ROSIN 6 — preencher URL",url:"",badge:"ok"},
+    {nome:"ROSIN 7 — preencher URL",url:"",badge:"ok"},
+    {nome:"ROSIN 8 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── PETEZAH ──
+  {id:"petezah",nome:"PETEZAH",icon:"⚡",desc:"Aba PETEZAH — preencha os links",links:[
+    {nome:"PETEZAH 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"PETEZAH 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"PETEZAH 3 — preencher URL",url:"",badge:"ok"},
+    {nome:"PETEZAH 4 — preencher URL",url:"",badge:"ok"},
+    {nome:"PETEZAH 5 — preencher URL",url:"",badge:"ok"},
+    {nome:"PETEZAH 6 — preencher URL",url:"",badge:"ok"},
+    {nome:"PETEZAH 7 — preencher URL",url:"",badge:"ok"},
+    {nome:"PETEZAH 8 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── GALAXY ──
+  {id:"galaxy",nome:"GALAXY",icon:"🌌",desc:"Aba GALAXY — preencha os links",links:[
+    {nome:"GALAXY 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"GALAXY 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"GALAXY 3 — preencher URL",url:"",badge:"ok"},
+    {nome:"GALAXY 4 — preencher URL",url:"",badge:"ok"},
+    {nome:"GALAXY 5 — preencher URL",url:"",badge:"ok"},
+    {nome:"GALAXY 6 — preencher URL",url:"",badge:"ok"},
+    {nome:"GALAXY 7 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── SPACE ──
+  {id:"space",nome:"SPACE",icon:"🚀",desc:"Aba SPACE — preencha os links",links:[
+    {nome:"SPACE 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 3 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 4 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 5 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 6 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 7 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 8 — preencher URL",url:"",badge:"ok"},
+    {nome:"SPACE 9 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── TRUFFLED ──
+  {id:"truffled",nome:"TRUFFLED",icon:"🍄",desc:"Aba TRUFFLED — preencha os links",links:[
+    {nome:"TRUFFLED 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"TRUFFLED 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"TRUFFLED 3 — preencher URL",url:"",badge:"ok"},
+    {nome:"TRUFFLED 4 — preencher URL",url:"",badge:"ok"},
+    {nome:"TRUFFLED 5 — preencher URL",url:"",badge:"ok"},
+    {nome:"TRUFFLED 6 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── VOID ──
+  {id:"void",nome:"VOID",icon:"🕳",desc:"Aba VOID — preencha os links",links:[
+    {nome:"VOID 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"VOID 2 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── DOGE ──
+  {id:"doge",nome:"DOGE",icon:"🐕",desc:"Aba DOGE — preencha os links",links:[
+    {nome:"DOGE 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"DOGE 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"DOGE 3 — preencher URL",url:"",badge:"ok"},
+    {nome:"DOGE 4 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── UNIUB ──
+  {id:"uniub",nome:"UNIUB",icon:"🎓",desc:"Aba UNIUB — preencha os links",links:[
+    {nome:"UNIUB 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"UNIUB 2 — preencher URL",url:"",badge:"ok"},
+    {nome:"UNIUB 3 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── IAS ──
+  {id:"ias",nome:"IAS",icon:"🧠",desc:"Aba IAS — preencha os links",links:[
+    {nome:"IAS 1 — preencher URL",url:"",badge:"ok"},
+    {nome:"IAS 2 — preencher URL",url:"",badge:"ok"},
+  ]},
+
+  // ── BLOQUEADOS ──
+  {id:"bloqueados",nome:"BLOQUEADOS",icon:"🚫",desc:"Sites bloqueados — referência",links:[
+    {nome:"GITHUB GAMES",url:"",badge:"bl"},{nome:"JOGOS",url:"",badge:"bl"},
+    {nome:"KARTBROS",url:"",badge:"bl"},{nome:"KARTBROS 2",url:"",badge:"bl"},
+    {nome:"KARTBROS + SHELL SHOCKERS",url:"",badge:"bl"},{nome:"JOGOS 2",url:"",badge:"bl"},
+    {nome:"JOGOS 3",url:"",badge:"bl"},{nome:"UBG365",url:"",badge:"bl"},
+    {nome:"GEOMETRY DASH",url:"",badge:"bl"},{nome:"BENDY AND THE INK MACHINE",url:"",badge:"bl"},
+    {nome:"DRIVE MAD",url:"",badge:"bl"},{nome:"JOGOS CRAZI",url:"",badge:"bl"},
+    {nome:"TEXAS MATH",url:"",badge:"bl"},{nome:"COOLMATH",url:"",badge:"bl"},
+    {nome:"LEARNING BOOKS",url:"",badge:"bl"},{nome:"ARQUIVOS P/ EMULADOR",url:"",badge:"bl"},
+    {nome:"TRUFFLED",url:"",badge:"bl"},{nome:"SHELL SHOCKERS",url:"",badge:"bl"},
+    {nome:"PLAYERNATION",url:"",badge:"bl"},{nome:"FUN MATH",url:"",badge:"bl"},
+    {nome:"EMULATOR JS 1",url:"",badge:"bl"},{nome:"EMULATOR JS 2",url:"",badge:"bl"},
+    {nome:"SHOPPING EASYCHARGE",url:"",badge:"bl"},{nome:"MS VOID",url:"",badge:"bl"},
+  ]},
+];
+
+/* ═══════════ RELÓGIO ═══════════ */
+function tick(){
+  const n=new Date(),h=n.getHours(),m=n.getMinutes(),s=n.getSeconds();
+  const p=x=>String(x).padStart(2,'0');
+  document.getElementById('timeDisplay').textContent=`${p(h)}:${p(m)}:${p(s)}`;
+  let gr,gl;
+  if(h>=5&&h<12){gr="BOM DIA! ☀";gl="Que seu dia seja incrível";}
+  else if(h>=12&&h<18){gr="BOA TARDE! 🌤";gl="Aproveite bem a tarde";}
+  else if(h>=18&&h<22){gr="BOA NOITE! 🌙";gl="Uma noite tranquila para você";}
+  else{gr="BOA MADRUGADA! 🌌";gl="Descanse quando puder...";}
+  document.getElementById('greeting').textContent=gr;
+  document.getElementById('greetLine').textContent=gl;
+}
+setInterval(tick,1000);tick();
+
+/* ═══════════ ESTRELAS ═══════════ */
+const se=document.getElementById('stars');
+for(let i=0;i<130;i++){
+  const s=document.createElement('div');s.className='star'+(Math.random()>.4?' tw':'');
+  const sz=Math.random()<.25?4:2;
+  s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*72}%;left:${Math.random()*100}%;animation-delay:${Math.random()*4}s;animation-duration:${Math.random()*3+1.5}s;opacity:${Math.random()*.5+.2}`;
+  se.appendChild(s);
+}
+
+/* ═══════════ VAGALUMES ═══════════ */
+for(let i=0;i<10;i++){
+  const f=document.createElement('div');f.className='ff';
+  const x=Math.random()*100,y=48+Math.random()*42;
+  f.style.cssText=`left:${x}%;top:${y}%;--dx:${(Math.random()-.5)*220}px;--dy:${(Math.random()-.5)*110}px;--dx2:${(Math.random()-.5)*300}px;--dy2:${(Math.random()-.5)*160}px;animation-duration:${Math.random()*9+7}s;animation-delay:${Math.random()*10}s`;
+  document.body.appendChild(f);
+}
+
+/* ═══════════ LOFI ═══════════ */
+// Usa Web Audio API para gerar lofi ambiente procedural (não requer download)
+let audioCtx=null,lofiNodes=[],playing=false,masterGain=null;
+
+function buildLofi(){
+  audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  masterGain=audioCtx.createGain();
+  masterGain.gain.value=0.12;
+  masterGain.connect(audioCtx.destination);
+
+  // Camada 1: pad ambient com osciladores suaves
+  const notes=[130.81,164.81,196,261.63,329.63]; // C3 E3 G3 C4 E4
+  notes.forEach((freq,i)=>{
+    const osc=audioCtx.createOscillator();
+    const g=audioCtx.createGain();
+    const filt=audioCtx.createBiquadFilter();
+    osc.type='sine';
+    osc.frequency.value=freq;
+    // lfo para variação lenta
+    const lfo=audioCtx.createOscillator();
+    const lfoG=audioCtx.createGain();
+    lfo.frequency.value=0.05+i*0.02;
+    lfoG.gain.value=0.5;
+    lfo.connect(lfoG);lfoG.connect(osc.frequency);lfo.start();
+    filt.type='lowpass';filt.frequency.value=800;
+    g.gain.value=0.04;
+    osc.connect(filt);filt.connect(g);g.connect(masterGain);
+    osc.start();
+    lofiNodes.push(osc,lfo);
+  });
+
+  // Camada 2: chuva branca filtrada (textura)
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate);
+  const data=buf.getChannelData(0);
+  for(let i=0;i<data.length;i++)data[i]=(Math.random()*2-1);
+  const noise=audioCtx.createBufferSource();
+  noise.buffer=buf;noise.loop=true;
+  const nFilt=audioCtx.createBiquadFilter();
+  nFilt.type='bandpass';nFilt.frequency.value=400;nFilt.Q.value=0.5;
+  const nGain=audioCtx.createGain();nGain.gain.value=0.008;
+  noise.connect(nFilt);nFilt.connect(nGain);nGain.connect(masterGain);
+  noise.start();
+  lofiNodes.push(noise);
+}
+
+function togglePlay(){
+  if(!audioCtx)buildLofi();
+  if(audioCtx.state==='suspended')audioCtx.resume();
+  playing=!playing;
+  if(playing){masterGain.gain.setTargetAtTime(parseFloat(document.getElementById('vol').value),audioCtx.currentTime,.5);}
+  else{masterGain.gain.setTargetAtTime(0,audioCtx.currentTime,.5);}
+  document.getElementById('playBtn').textContent=playing?'⏸':'▶';
+  document.getElementById('playerLabel').textContent=playing?'♪ tocando...':'lofi zen';
+}
+
+function setVol(v){
+  document.getElementById('volNum').textContent=Math.round(v*100)+'%';
+  if(masterGain&&playing)masterGain.gain.setTargetAtTime(parseFloat(v),audioCtx.currentTime,.1);
+}
+
+/* ═══════════ DOTS ═══════════ */
+const de=document.getElementById('dotsEl');
+for(let i=0;i<SENHA.length;i++){const d=document.createElement('div');d.className='dot';d.id='d'+i;de.appendChild(d);}
+function setDots(n,err){
+  for(let i=0;i<SENHA.length;i++){
+    const d=document.getElementById('d'+i);if(!d)return;
+    d.className='dot'+(i<n?(err?' err':' on'):'');
+  }
+}
+
+/* ═══════════ CAT GRID ═══════════ */
+const cg=document.getElementById('catGrid');
+CATS.forEach(c=>{
+  const b=document.createElement('button');
+  b.className='cat-btn'+(c.ai?' ai-btn':'');
+  const count=c.ai?'chat IA':(c.links?c.links.length+' links':'');
+  b.innerHTML=`<span class="ci">${c.icon}</span>${c.nome}<div class="cn">${count}</div>`;
+  b.onclick=()=>c.ai?openAI():openCat(c.id);
+  cg.appendChild(b);
+});
+
+/* ═══════════ OPEN CAT ═══════════ */
+function openCat(id){
+  const c=CATS.find(x=>x.id===id);if(!c||!c.links)return;
+  document.getElementById('m2title').textContent=`${c.icon} ${c.nome}`;
+  document.getElementById('m2sub').textContent=c.desc;
+  const ll=document.getElementById('linkList');ll.innerHTML='';
+  if(!c.links.length){
+    const e=document.createElement('div');e.className='li empty';e.textContent='[ vazio ]';ll.appendChild(e);
+  } else {
+    c.links.forEach((lk,i)=>{
+      const num=`<span class="lnum">${String(i+1).padStart(2,'0')}</span>`;
+      const badge=`<span class="lbadge ${lk.badge||'ok'}">${lk.badge==='bl'?'BLOQ':lk.badge==='ext'?'EXT':'OK'}</span>`;
+      if(!lk.url||lk.badge==='bl'){
+        const d=document.createElement('div');d.className='li'+(lk.badge==='bl'?' empty':'');
+        d.innerHTML=`${num}<span class="lname">${lk.nome}</span>${badge}`;ll.appendChild(d);
+      } else {
+        const a=document.createElement('a');a.className='li';a.href=lk.url;a.target='_blank';a.rel='noopener noreferrer';
+        a.innerHTML=`${num}<span class="lname">${lk.nome}</span>${badge}`;ll.appendChild(a);
+      }
+    });
+  }
+  document.getElementById('menu1').classList.remove('open');
+  document.getElementById('menu2').classList.add('open');
+}
+
+/* ═══════════ AI ═══════════ */
+let aiHistory=[];
+function openAI(){
+  document.getElementById('menu1').classList.remove('open');
+  document.getElementById('aiPanel').classList.add('open');
+  if(!aiHistory.length)addAIMsg('ai','Olá! Sou seu assistente. Como posso ajudar?');
+}
+function addAIMsg(role,text){
+  const chat=document.getElementById('aiChat');
+  const d=document.createElement('div');d.className='msg '+role;
+  if(role==='ai')d.innerHTML=`<div class="ai-name">▶ CLAUDE</div>${escHtml(text)}`;
+  else d.textContent=text;
+  chat.appendChild(d);chat.scrollTop=chat.scrollHeight;
+}
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+async function sendAI(){
+  const inp=document.getElementById('aiInput');
+  const msg=inp.value.trim();if(!msg)return;
+  inp.value='';
+  addAIMsg('user',msg);
+  aiHistory.push({role:'user',content:msg});
+
+  const btn=document.getElementById('aiSend');
+  btn.disabled=true;
+  const think=document.createElement('div');think.className='ai-thinking';think.textContent='pensando...';
+  document.getElementById('aiChat').appendChild(think);
+  document.getElementById('aiChat').scrollTop=99999;
+
+  if(API_KEY==='SUA_CHAVE_AQUI'){
+    think.remove();
+    addAIMsg('ai','⚠ Insira sua chave API no código (variável API_KEY). Obtenha em console.anthropic.com');
+    btn.disabled=false;return;
+  }
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:'Você é um assistente amigável integrado a um portal pessoal com tema zen e pixel art. Responda de forma concisa e útil em português.',
+        messages:aiHistory
+      })
+    });
+    const data=await res.json();
+    think.remove();
+    if(data.content&&data.content[0]){
+      const reply=data.content[0].text;
+      aiHistory.push({role:'assistant',content:reply});
+      addAIMsg('ai',reply);
+    } else {
+      addAIMsg('ai','Erro ao obter resposta. Verifique sua chave API.');
+    }
+  }catch(e){
+    think.remove();
+    addAIMsg('ai','Erro de conexão: '+e.message);
+  }
+  btn.disabled=false;
+}
+
+/* ═══════════ NAV ═══════════ */
+function goBack(){
+  document.getElementById('menu2').classList.remove('open');
+  document.getElementById('aiPanel').classList.remove('open');
+  document.getElementById('menu1').classList.add('open');
+}
+function closeAll(){
+  ['menu1','menu2','aiPanel'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  typed='';setDots(0,false);
+}
+
+/* ═══════════ SENHA ═══════════ */
+let typed='';
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){closeAll();return;}
+  const open=['menu1','menu2','aiPanel'].some(id=>document.getElementById(id).classList.contains('open'));
+  if(open){
+    if(e.target.id==='aiInput')return;
+    return;
+  }
+  if(e.key.length!==1)return;
+  typed+=e.key.toLowerCase();
+  if(typed.length>SENHA.length)typed=typed.slice(-SENHA.length);
+  let match=0;
+  for(let i=1;i<=typed.length;i++){if(SENHA.startsWith(typed.slice(typed.length-i)))match=i;}
+  const isErr=match<typed.length&&!SENHA.startsWith(typed);
+  if(typed===SENHA){setDots(SENHA.length,false);setTimeout(()=>document.getElementById('menu1').classList.add('open'),150);}
+  else setDots(match,isErr);
+});
+</script>
+</body>
+</html>
