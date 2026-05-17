@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bem-vindo</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: #0b1a0e;
+    font-family: 'Lato', sans-serif;
+    color: #d4e8c2;
+    overflow-x: hidden;
+  }
+
+  .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+  .leaf {
+    position: absolute;
+    border-radius: 50% 0 50% 0;
+    background: rgba(100, 200, 100, 0.15);
+    animation: floatLeaf linear infinite;
+  }
+  @keyframes floatLeaf {
+    0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 0.5; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    z-index: 1;
+  }
+  .hero::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 80%, rgba(20, 80, 30, 0.6) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 20%, rgba(10, 60, 20, 0.5) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 50%, rgba(5, 30, 10, 0.8) 0%, transparent 80%);
+    z-index: -1;
+  }
+
+  .forest-svg {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    width: 100%; height: 45vh;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  .moon {
+    position: fixed;
+    top: 6vh; right: 10vw;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #e8f5c8, #a8d080);
+    box-shadow: 0 0 40px rgba(168,208,128,0.4), 0 0 80px rgba(168,208,128,0.15);
+    z-index: 1;
+    animation: moonPulse 4s ease-in-out infinite;
+  }
+  @keyframes moonPulse {
+    0%,100% { box-shadow: 0 0 40px rgba(168,208,128,0.4), 0 0 80px rgba(168,208,128,0.15); }
+    50%     { box-shadow: 0 0 60px rgba(168,208,128,0.6), 0 0 120px rgba(168,208,128,0.25); }
+  }
+
+  .stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .star {
+    position: absolute;
+    background: #d4e8c2;
+    border-radius: 50%;
+    animation: twinkle ease-in-out infinite;
+  }
+  @keyframes twinkle {
+    0%,100% { opacity: 0.2; transform: scale(1); }
+    50%     { opacity: 1; transform: scale(1.3); }
+  }
+
+  .title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700;
+    color: #e2f5c0;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+    text-shadow: 0 0 40px rgba(100,200,80,0.3);
+    animation: fadeInUp 1.2s ease forwards;
+    opacity: 0;
+    margin-bottom: 1rem;
+  }
+  .subtitle {
+    font-weight: 300;
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: #8ab870;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    animation: fadeInUp 1.2s 0.3s ease forwards;
+    opacity: 0;
+    margin-bottom: 3rem;
+  }
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .divider {
+    width: 60px; height: 1px;
+    background: linear-gradient(to right, transparent, #6aaa44, transparent);
+    margin: 0 auto 2.5rem;
+    animation: fadeInUp 1.2s 0.6s ease forwards;
+    opacity: 0;
+  }
+
+  .hint {
+    font-size: 0.75rem;
+    color: rgba(138,184,112,0.35);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    animation: fadeInUp 1.2s 1.2s ease forwards;
+    opacity: 0;
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  /* Dots indicadores da senha */
+  .key-indicator {
+    position: fixed;
+    bottom: 5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+  }
+  .key-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(106,170,68,0.25);
+    transition: all 0.2s;
+  }
+  .key-dot.active {
+    background: #6aaa44;
+    box-shadow: 0 0 8px #6aaa44;
+  }
+  .key-dot.error {
+    background: #aa4444;
+    box-shadow: 0 0 8px #aa4444;
+  }
+
+  /* Menu secreto */
+  .secret-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,15,5,0.97);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.6s ease;
+    padding: 2rem;
+  }
+  .secret-overlay.open { opacity: 1; pointer-events: all; }
+
+  .secret-badge {
+    font-size: 0.7rem;
+    color: rgba(106,170,68,0.5);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .secret-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    color: #6aaa44;
+    margin-bottom: 2.5rem;
+    text-align: center;
+  }
+
+  .links-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.875rem;
+    width: 100%;
+    max-width: 680px;
+    margin-bottom: 2.5rem;
+  }
+  .secret-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid rgba(106,170,68,0.2);
+    border-radius: 8px;
+    text-decoration: none;
+    color: #a8d080;
+    font-size: 0.88rem;
+    transition: all 0.25s ease;
+    background: rgba(106,170,68,0.04);
+  }
+  .secret-link:hover {
+    border-color: rgba(106,170,68,0.55);
+    background: rgba(106,170,68,0.1);
+    color: #d4e8c2;
+    transform: translateX(4px);
+  }
+  .link-icon { font-size: 1.25rem; flex-shrink: 0; }
+  .link-label { font-weight: 400; }
+  .link-desc { font-size: 0.7rem; color: rgba(168,208,128,0.45); margin-top: 2px; }
+
+  .close-btn {
+    font-size: 0.72rem;
+    color: rgba(106,170,68,0.35);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    transition: color 0.2s;
+  }
+  .close-btn:hover { color: #6aaa44; }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="moon"></div>
+<div class="particles" id="particles"></div>
+
+<!-- Floresta SVG -->
+<svg class="forest-svg" viewBox="0 0 1200 400" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="tG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a4a20"/>
+      <stop offset="100%" stop-color="#0a2010"/>
+    </linearGradient>
+    <linearGradient id="tL" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a6a30"/>
+      <stop offset="100%" stop-color="#0f3018"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="200" cy="420" rx="300" ry="120" fill="#0a2010" opacity="0.8"/>
+  <ellipse cx="800" cy="430" rx="350" ry="110" fill="#0a2010" opacity="0.7"/>
+  <polygon points="80,400 130,200 180,400" fill="url(#tG)"/>
+  <polygon points="100,400 130,230 160,400" fill="url(#tL)" opacity="0.6"/>
+  <polygon points="160,400 220,180 280,400" fill="url(#tG)"/>
+  <polygon points="250,400 310,210 370,400" fill="url(#tL)"/>
+  <polygon points="340,400 400,150 460,400" fill="url(#tG)"/>
+  <polygon points="420,400 470,190 520,400" fill="url(#tL)"/>
+  <polygon points="500,400 560,170 620,400" fill="url(#tG)"/>
+  <polygon points="580,400 630,200 680,400" fill="url(#tL)"/>
+  <polygon points="650,400 720,155 790,400" fill="url(#tG)"/>
+  <polygon points="740,400 800,180 860,400" fill="url(#tL)"/>
+  <polygon points="820,400 880,165 940,400" fill="url(#tG)"/>
+  <polygon points="900,400 960,195 1020,400" fill="url(#tL)"/>
+  <polygon points="980,400 1050,170 1120,400" fill="url(#tG)"/>
+  <polygon points="1060,400 1120,200 1180,400" fill="url(#tL)"/>
+  <rect x="0" y="390" width="1200" height="20" fill="#061508"/>
+</svg>
+
+<!-- Conteúdo principal -->
+<section class="hero">
+  <h1 class="title">Bem-vindo à Floresta</h1>
+  <p class="subtitle">Um lugar só seu</p>
+  <div class="divider"></div>
+</section>
+
+<p class="hint">✦ pressione qualquer tecla para começar ✦</p>
+<div class="key-indicator" id="keyIndicator"></div>
+
+<!-- Menu secreto -->
+<div class="secret-overlay" id="secretMenu">
+  <p class="secret-badge">✦ área restrita ✦</p>
+  <h2 class="secret-title">Menu Secreto</h2>
+  <div class="links-grid" id="linksGrid"></div>
+  <button class="close-btn" onclick="closeMenu()">✕ fechar (esc)</button>
+</div>
+
+<script>
+  /* =========================================
+     CONFIGURAÇÕES — edite aqui à vontade!
+  ========================================= */
+
+  // Senha secreta (apenas letras minúsculas, sem espaços)
+  const SENHA = "floresta";
+
+  // Título e subtítulo do site
+  // (edite direto no HTML acima nas tags <h1> e <p class="subtitle">)
+
+  // Links do menu secreto
+  const LINKS = [
+    { icon: "🎵", label: "Spotify",    desc: "Sua música",        url: "https://spotify.com" },
+    { icon: "📺", label: "YouTube",    desc: "Vídeos favoritos",   url: "https://youtube.com" },
+    { icon: "💬", label: "Discord",    desc: "Seus servidores",    url: "https://discord.com" },
+    { icon: "📖", label: "Notion",     desc: "Suas notas",         url: "https://notion.so"   },
+    { icon: "🎮", label: "Steam",      desc: "Sua biblioteca",     url: "https://store.steampowered.com" },
+    { icon: "🔒", label: "Link Extra", desc: "Só você sabe",       url: "https://example.com" },
+  ];
+
+  /* =========================================
+     Código — não precisa editar abaixo
+  ========================================= */
+
+  let typed = "";
+
+  // Estrelas
+  const starsEl = document.getElementById('stars');
+  for (let i = 0; i < 90; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `width:${sz}px;height:${sz}px;top:${Math.random()*70}%;left:${Math.random()*100}%;animation-duration:${Math.random()*3+2}s;animation-delay:${Math.random()*5}s`;
+    starsEl.appendChild(s);
+  }
+
+  // Folhas flutuantes
+  const partEl = document.getElementById('particles');
+  for (let i = 0; i < 14; i++) {
+    const l = document.createElement('div');
+    l.className = 'leaf';
+    const sz = Math.random()*8+5;
+    l.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;animation-duration:${Math.random()*15+10}s;animation-delay:${Math.random()*12}s`;
+    partEl.appendChild(l);
+  }
+
+  // Dots indicadores
+  const indEl = document.getElementById('keyIndicator');
+  for (let i = 0; i < SENHA.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'key-dot';
+    d.id = 'dot-' + i;
+    indEl.appendChild(d);
+  }
+
+  function updateDots(count, error) {
+    for (let i = 0; i < SENHA.length; i++) {
+      const d = document.getElementById('dot-' + i);
+      if (!d) continue;
+      d.className = 'key-dot';
+      if (i < count) d.classList.add(error ? 'error' : 'active');
+    }
+  }
+
+  // Links do menu secreto
+  const gridEl = document.getElementById('linksGrid');
+  LINKS.forEach(link => {
+    const a = document.createElement('a');
+    a.href = link.url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.className = 'secret-link';
+    a.innerHTML = `<span class="link-icon">${link.icon}</span><div><div class="link-label">${link.label}</div><div class="link-desc">${link.desc}</div></div>`;
+    gridEl.appendChild(a);
+  });
+
+  function openMenu() {
+    document.getElementById('secretMenu').classList.add('open');
+  }
+  function closeMenu() {
+    document.getElementById('secretMenu').classList.remove('open');
+    typed = "";
+    updateDots(0, false);
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { closeMenu(); return; }
+    if (document.getElementById('secretMenu').classList.contains('open')) return;
+    if (e.key.length !== 1) return;
+
+    typed += e.key.toLowerCase();
+    if (typed.length > SENHA.length) typed = typed.slice(-SENHA.length);
+
+    const partial = typed;
+    let matchLen = 0;
+    for (let i = 1; i <= partial.length; i++) {
+      if (SENHA.startsWith(partial.slice(partial.length - i))) matchLen = i;
+    }
+
+    if (typed === SENHA) {
+      updateDots(SENHA.length, false);
+      setTimeout(openMenu, 150);
+    } else {
+      updateDots(matchLen, matchLen < typed.length);
+    }
+  });
+</script>
+</body>
+</html>
